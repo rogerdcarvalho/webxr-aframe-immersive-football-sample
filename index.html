@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Immersive Football Sample</title>
+        <script>
+            // Customized stemkoski's player-move to limit viewer movement to global boundaries
+            window.boundaries = {};
+            window.boundaries.left = -9;
+            window.boundaries.right = 9;
+            window.boundaries.up = 5;
+            window.boundaries.down = 0.0001;
+            window.boundaries.forward = 9;
+            window.boundaries.backward = -9;
+        </script>
+        <!--Core AFrame Libary-->
+        <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+        <!--AFrame Environment to get us a basic environment with lighting-->
+        <script src="js/aframe-environment-component.js"></script>
+        <!--Handle Oculus Quest Controllers (by stemkoski)-->
+        <script src="js/controller-listener.js"></script>
+        <!--Handle viewer movement Quest Controllers  (by stemkoski)-->
+        <script src="js/player-move.js"></script>
+        <!--Handle grabbing and clicking on objects (by stemkoski)-->
+        <script src="js/raycaster-extras.js"></script>
+        <!--Handle physics (by stemkoski) -->
+        <script src="js/physx.release.js"></script>
+        <script src="js/physics.js"></script>
+    </head>
+
+    <body>
+
+        <!--Page functions-->
+        <script>
+    
+            // Whenever an immersive 360 video is playing, detect controller interaction
+            AFRAME.registerComponent('immersive-player', {
+              init: function () {
+                  this.controllerData = document.querySelector("#controller-data").components["controller-listener"];
+              },
+              tick: function()
+              {
+                    //Stop playing if any button is pressed
+                    if (window.immersivePlaying && (this.controllerData.buttonY.pressing ||
+                      this.controllerData.buttonX.pressing ||
+                      this.controllerData.leftTrigger.pressing ||
+                      this.controllerData.leftGrip.pressing ||
+                      this.controllerData.buttonB.pressing ||
+                      this.controllerData.buttonA.pressing ||
+                      this.controllerData.rightTrigger.pressing ||
+                      this.controllerData.rightGrip.pressing)
+                  ) {
+                        // Make room elements visible again
+                        const roomElements = document.querySelectorAll(".room");
+                        roomElements.forEach((roomElement) => {
+                            roomElement.setAttribute("visible", true);
+                        });
+                        
+                        // Stop playing immersive
+                        window.immersivePlayer.setAttribute("visible", false);
+                        window.immersivePlayer.getAttribute('material').src.pause();
+                        window.immersivePlaying = false;
+                    }
+                    
+                    //Fast forward or rewind with right joypad
+                    if (window.immersivePlaying && Math.abs(this.controllerData.rightAxisX) > 0.90) {
+                        if ( this.controllerData.rightAxisX > 0.90 )
+                            window.immersivePlayer.getAttribute('material').src.currentTime = window.immersivePlayer.getAttribute('material').src.currentTime + 5
+                        if ( this.controllerData.rightAxisX < -0.90 ) {
+                            if (window.immersivePlayer.getAttribute('material').src.currentTime > 5) {
+                                window.immersivePlayer.getAttribute('material').src.currentTime = window.immersivePlayer.getAttribute('material').src.currentTime - 5
+                            } else {
+                                window.immersivePlayer.getAttribute('material').src.currentTime = 0
+                            }
+                        }
+
+                  }
+              }
+              
+            });
+            
+            // Handle the data displayed on the stats board
+            AFRAME.registerComponent('match-stats', {
+            	
+            	init: function()
+            	{
+            		this.lastUpdate = 0
+            	},
+            
+            	tick: function()
+            	{
+            	    if (window.streamPlaying){
+            	        
+            	        // From kickoff, generate random possession stats every 10 seconds
+            	        if (window.video.currentTime > 249 && (window.video.currentTime - this.lastUpdate) > 10) {
+            	            const possession = Math.floor(Math.random() * 21) + 40
+                	        document.querySelector("#possession-team-a").setAttribute( "text", "value", Math.round(possession) + "%");
+            	            document.querySelector("#possession-team-b").setAttribute( "text", "value", Math.round((100 - possession) ) +"%");
+            	            console.log(window.video.currentTime);
+            	            this.lastUpdate = window.video.currentTime
+            	        }
+            	        
+            	        // Make the score 1-0 as it happens
+            	        if (window.video.currentTime > 812 && !this.firstGoalSet ) {
+                	        document.querySelector("#goals-team-a").setAttribute( "text", "value", 1);
+            	            document.querySelector("#goals-team-b").setAttribute( "text", "value", 0);
+            	            this.firstGoalSet = true;
+            	        }
+            	        
+            	        // Make the score 1-1 as it happens
+                        if (window.video.currentTime > 3430 && !this.secondGoalSet ) {
+                	        document.querySelector("#goals-team-a").setAttribute( "text", "value", 1);
+            	            document.querySelector("#goals-team-b").setAttribute( "text", "value", 1);
+            	            this.secondGoalSet = true;
+            	        }
+            	        
+            	        // Record first yellow card
+                        if (window.video.currentTime > 3830 && !this.firstYellowSet ) {
+                	        document.querySelector("#yellow-team-a").setAttribute( "text", "value", 0);
+            	            document.querySelector("#yellow-team-b").setAttribute( "text", "value", 1);
+            	            this.firstYellowSet = true;
+            	        }
+            	        
+            	        // Record second yellow card
+                        if (window.video.currentTime > 4523 && !this.secondYellowSet ) {
+                	        document.querySelector("#yellow-team-a").setAttribute( "text", "value", 0);
+            	            document.querySelector("#yellow-team-b").setAttribute( "text", "value", 2);
+            	            this.secondYellowSet = true;
+            	        }
+            	        
+            	        // Make the score 1-2 as it happens
+            	        if (window.video.currentTime > 4698 && !this.thirdGoalSet ) {
+                	        document.querySelector("#goals-team-a").setAttribute( "text", "value", 1);
+            	            document.querySelector("#goals-team-b").setAttribute( "text", "value", 2);
+            	            this.thirdGoalSet = true;
+            	        }
+            	        
+            	        // Make the score 2-2 as it happens
+            	        if (window.video.currentTime > 4940 && !this.fourthGoalSet ) {
+                	        document.querySelector("#goals-team-a").setAttribute( "text", "value", 2);
+            	            document.querySelector("#goals-team-b").setAttribute( "text", "value", 2);
+            	            this.fourthGoalSet = true;
+            	        }
+            	        
+            	        // Make the score 3-2 as it happens
+            	        if (window.video.currentTime > 4940 && !this.fifthGoalSet ) {
+                	        document.querySelector("#goals-team-a").setAttribute( "text", "value", 3);
+            	            document.querySelector("#goals-team-b").setAttribute( "text", "value", 2);
+            	            this.fifthGoalSet = true;
+            	        }
+            	    }
+            	},
+            	
+            });
+            
+            // Handle the grabbing of objects
+            AFRAME.registerComponent("physics-grab", {
+                init: function () 
+                {
+                    let self = this;
+                    this.el.addEventListener("raycaster-grabbed", function() {
+                        window.debug = "Element grabbed";
+                        self.el.addState("grabbed"); 
+                    });
+                    
+                    this.el.addEventListener("raycaster-clicked", function() {
+                        window.debug = "Element clicked";
+                    });
+            
+                    this.el.addEventListener("raycaster-released", function() {
+                        window.debug = "Element released";
+                        self.el.removeState("grabbed"); 
+                    });
+                }
+            });
+        
+            // To allow for live debugging, display data in immersive environment 
+            AFRAME.registerComponent('text-display', {
+            	
+            	init: function()
+            	{
+            		this.controllerData = document.querySelector("#controller-data").components["controller-listener"];
+            		this.text = "";
+            	},
+            
+            	tick: function()
+            	{
+            		this.text = 
+            		           "Debug Data: " + window.debug + "\n" +
+            		           "Left Controller:" + "\n" +
+            		           "Joystick X: " + this.controllerData.leftAxisX + "\n" +
+            		           "Joystick Y: " + this.controllerData.leftAxisY + "\n" + 
+            		           "[Y] Button: " + this.controllerData.buttonY.pressing + "\n" +
+            		           "[X] Button: " + this.controllerData.buttonX.pressing + "\n" +
+            		           "   Trigger: " + this.controllerData.leftTrigger.pressing + "\n" +
+            		           "      Grip: " + this.controllerData.leftGrip.pressing + "\n" +
+            		           "----------------------------------- \n" +
+            		           "Right Controller:" + "\n" +
+            		           "Joystick X: " + this.controllerData.rightAxisX + "\n" +
+            		           "Joystick Y: " + this.controllerData.rightAxisY + "\n" +
+            		           "[B] Button: " + this.controllerData.buttonB.pressing + "\n" +
+            		           "[A] Button: " + this.controllerData.buttonA.pressing + "\n" +
+            		           "   Trigger: " + this.controllerData.rightTrigger.pressing + "\n" +
+            		           "      Grip: " + this.controllerData.rightGrip.pressing + "\n";
+            		           
+            		this.el.setAttribute( "text", "value", this.text );
+            	},
+            	
+            });
+            
+            // Make main video screen available globally
+            AFRAME.registerComponent('video-screen', {
+              init: function () {
+                const videoEl = this.el.getAttribute('material').src;
+                window.video = videoEl;
+                this.controllerData = document.querySelector("#controller-data").components["controller-listener"];
+
+              },
+              tick: function() {
+                if (window.streamPlaying && Math.abs(this.controllerData.rightAxisX) > 0.90) {
+                    if ( this.controllerData.rightAxisX > 0.90 )
+                        window.video.currentTime = window.video.currentTime + 15
+                    if ( this.controllerData.rightAxisX < -0.90 ) {
+                        if (window.video.currentTime > 15) {
+                            window.video.currentTime = window.video.currentTime - 15
+                        } else {
+                            window.video.currentTime = 0
+                        }
+                    }
+
+                  }
+              }
+            
+            });
+            
+            function play360(id){
+            // Plays one of the immersive 360 videos
+            
+                const video = document.querySelector("#" + id).getAttribute('material').src;
+                const object = document.querySelector("#" + id)
+                
+                if (!window.streamPlaying) {
+                    
+                    // Hide all room elements
+                    const roomElements = document.querySelectorAll(".room");
+                    console.log(roomElements);
+                    roomElements.forEach((roomElement) => {
+                        roomElement.setAttribute("visible", false)
+                    });
+                    
+                    // Make 360 player visible and start playing video
+                    object.setAttribute("visible", true)
+                    video.play();
+                    video.muted = false;
+                    
+                    // Make player available globally so it can be stopped by controller
+                    window.immersivePlayer = object;
+                    
+                    // Wait for the video to load and then inform the 'tick' function of the player to detect controller presses to stop the video
+                    setTimeout(
+                        function() {
+                            window.immersivePlaying = true;
+                        }, 1000
+                    );
+            
+                } else {
+                    
+                    // Pause the main video first before starting to play 360 content
+                    window.video.pause();
+                    window.streamPlaying = false;
+                    play360(id);
+                }
+            }
+            
+            function playPauseVideo(){
+            // Plays or pauses the main video screen in the room
+                
+                const playButton = document.querySelector("#play-button");
+                
+                if (!window.streamPlaying && !window.immersivePlaying) {
+                    window.debug = "Playing video";
+                    window.video.play();
+                    window.video.muted = false;
+                    window.streamPlaying = true;
+                    playButton.setAttribute('visible', false);
+            
+                } else if (!window.immersivePlaying) {
+                    window.debug = "Pausing video";
+                    window.video.pause();
+                    window.streamPlaying = false;
+                    playButton.setAttribute('visible', true);
+                }
+            }
+        </script>
+        
+        <!--3D environment-->
+        <a-scene environment="preset: default;"
+                 physx="autoLoad: true; delay: 1000; wasmUrl: js/physx.release.wasm; useDefaultScene: false;">
+        
+            <!--Preload assets, but keep the page load under 3 seconds-->
+            <a-assets timeout="3000">
+                <img id="gradient" src="images/gradient-fade.png" />
+                <img id="ball" src="images/football.jpg" />
+                <img id="walls" src="images/wall.jpg"/>
+                <img id="ceiling" src="images/ceiling.jpg"/>
+                <img id="floor" src="images/floor.jpg"/>
+                <img id="play" src="images/play.png"/>
+                <img id="west-ham" src="images/west-ham.jpg"/>
+                <img id="man-united" src="images/man-united.webp"/>
+
+    
+                <video id="match-stream" preload="auto"
+                       src="https://player.vimeo.com/progressive_redirect/playback/717250500/rendition/1080p/file.mp4?loc=external&signature=c918b26426d3e53101947727f0e4c92b2e9444e8ccdc2d35abfe973c42c0f860"
+                       width="160" height="90" loop="true"
+                       crossOrigin="anonymous" muted></video>
+                <video id="west-ham-360" preload="auto"
+                       src="https://player.vimeo.com/progressive_redirect/playback/717248963/rendition/1080p/file.mp4?loc=external&signature=47017bf955281240ecce58adc4a821b18cf559844cdcb2049435a96018b2965c"
+                       loop="true"
+                       playsinline webkit-playsinline
+                       crossOrigin="anonymous" muted></video>
+                <video id="man-united-360" preload="auto"
+                       src="https://player.vimeo.com/progressive_redirect/playback/717249989/rendition/1080p/file.mp4?loc=external&signature=b328d799730f1e0ef0f7130de066c5374a4b9ecc5285f5a58dc86938f26facbe"
+                       width="160" height="90" loop="true"
+                       crossOrigin="anonymous" muted></video>
+            </a-assets>
+            
+            <!--Create a sky and viewer that is controllable by a Quest controller -->
+            <a-sky 
+                color = "#000337">
+            </a-sky>
+            <a-entity 
+                id="player" 
+                position="0 2 -0.5" 
+                player-move="controllerListenerId: #controller-data;
+                             navigationMeshClass: environmentGround;">
+                
+                <a-camera></a-camera>
+            
+                <a-entity 
+                    id="controller-data" 
+                    controller-listener="leftControllerId:  #left-controller; 
+                                         rightControllerId: #right-controller;">
+                </a-entity>
+        
+                <a-entity 
+                    id="left-controller"
+                    oculus-touch-controls="hand: left">
+                </a-entity>
+        
+                <a-entity
+                    id="right-controller"
+                    oculus-touch-controls="hand: right"
+                    raycaster="objects: .raycaster-target, .environmentGround;"
+                    raycaster-extras="controllerListenerId: #controller-data; 
+                                      beamImageSrc: #gradient; 
+                                      beamLength: 1.5;">
+                </a-entity>
+        
+            </a-entity>
+            
+            <!-- Create a floor -->
+            <a-box physx-body="type: static;" 
+                   class="environmentGround room"
+                   position="0 0.02 0"
+                   width="20" depth="20" height="0.1"
+                   material="src: #floor; repeat: 4 4;"
+                   shadow="receive: true;">
+            </a-box>
+          
+            <!-- Create a ceiling -->
+            <a-box physx-body="type: static;"  
+                   class="room"
+                   position="0 10 0" 
+                   width="20" 
+                   depth="20" 
+                   height="0.1" 
+                   src="#ceiling" >
+            </a-box>
+
+            <!-- Create the front facing wall -->
+            <a-box physx-body="type: static;" 
+                   class="room"
+                   position="0 5 -10"
+                   width="20" depth="0.1" height="10"
+                   material="src: #walls; repeat: 2 2;">
+            </a-box>
+    
+            <!-- Create the video screen on the front facing wall -->
+            <a-video id="video-screen"
+                      class="room"
+                      material="shader: flat; src: #match-stream"
+                      geometry="primitive: plane; width: 16; height: 9;"
+                      position="0 5 -9.9"
+                      rotation="0 0 0"
+                      video-screen
+                      raycaster-target="canClick: true; glowOnHover: true;"
+                      onClick="playPauseVideo();"
+                      clickable
+                      visible="true">
+                <!--Indicate to the user that they need to click the screen to play the stream-->
+                <a-image id="play-button" 
+                       class="room"
+                       src="#play"
+                       position="0 0 .1" 
+                       width="0.75" 
+                       height="0.75" >
+                </a-image>
+            </a-video>
+             
+            <!-- Create a back wall -->
+            <a-box physx-body="type: static;" 
+                   class="room"
+                   position="0 5 10"
+                   width="20" depth="0.1" height="10"
+                   material="src: #walls; repeat: 2 2;">
+            </a-box>
+
+            <!-- Create a right wall -->
+            <a-box physx-body="type: static;" 
+                   class="room"
+                   position="10 5 0"
+                   width="0.1" depth="20" height="10"
+                   material="src: #walls; repeat: 2 2;">
+            </a-box>
+            
+            <!-- Create a left wall -->
+            <a-box physx-body="type: static;" 
+                   class="room"
+                   position="-10 5 0"
+                   width="0.1" depth="20" height="10"
+                   material="src: #walls; repeat: 2 2;">
+            </a-box>
+    
+            <!--Create the immersive 360 video player-->
+            <a-entity id="videospheredisplay" immersive-player position="0 4 0">
+                <a-videosphere id="west-ham-360-player" 
+                               position="0 0 0" 
+                               radius="4" 
+                               src="#west-ham-360" 
+                               videosphereexpand  
+                               visible="false">
+                </a-videosphere>
+                <a-videosphere id="man-united-360-player" 
+                               position="0 0 0" 
+                               radius="4" 
+                               src="#man-united-360" 
+                               videosphereexpand  
+                               visible="false">
+                </a-videosphere>
+            </a-entity>
+            
+            <!--Debug screen, make this visible to show controller data and any information you set to window.debug-->
+            <a-entity id="textArea"
+                      position="0 4 -1.9" 
+                      geometry="primitive: plane;  
+                                width: 8; 
+                                height: 8"
+                      material="color: #444444; 
+                                transparent: true; 
+                                opacity: 0.80;"
+                      text="anchor: center; 
+                            baseline:center; 
+                            wrapCount: 40;
+                            transparent: true; 
+                            opacity: 0.90; 
+                            color: #8888FF;
+                            value: "
+      				  text-display
+      				  visible=false>
+      	    </a-entity>
+            
+            <!--Add 3 footballs to add to the ambiance-->
+            <a-sphere physx-body="type: dynamic;" 
+                      physx-material="restitution: 0.8;"
+                      raycaster-target="canGrab: true;"
+                      physics-grab
+                      class="room"
+                      position="1 6 -5" 
+                      radius="0.5" 
+                      material="src:#ball; color:white;"
+                      shadow="cast: true;">
+            </a-sphere>
+            <a-sphere physx-body="type: dynamic;" 
+                      physx-material="restitution: 0.8;"
+                      raycaster-target="canGrab: true;"
+                      physics-grab
+                      class="room"
+                      position="2.5 6 -5.1" 
+                      radius="0.5" 
+                      material="src:#ball; color:white;">
+            </a-sphere>
+            <a-sphere physx-body="type: dynamic;" 
+                      physx-material="restitution: 0.8;"
+                      raycaster-target="canGrab: true;"
+                      physics-grab
+                      class="room"
+                      position="3 4 -5" 
+                      radius="0.5" 
+                      material="src:#ball; color:white;">
+            </a-sphere>
+            <a-sphere physx-body="type: dynamic;" 
+                      physx-material="restitution: 0.8;"
+                      raycaster-target="canGrab: true;"
+                      physics-grab
+                      class="room"
+                      position="3.5 8 -4.8" 
+                      radius="0.5" 
+                      material="src:#ball; color:white;">
+            </a-sphere>
+
+
+            <!-- Add Stats Board -->
+            <a-box position = "-9.75 5 -3"
+                   physx-body="type: kinematic;"
+                   class="room"
+                   raycaster-target="canGrab: true;"
+                   width="0.1"
+                   depth="7.5"
+                   height="5"
+                   match-stats
+                   color = "#191817">
+                <a-plane id="statscaption" 
+                         position="0.1 2.15 .01" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: GAME STATS; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: center">
+                </a-plane>
+                <a-plane id="name-team-a" 
+                         position="0.1 2.15 0.25" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: West Ham; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: left">
+                </a-plane>
+                <a-plane id="name-team-b" 
+                         position="0.1 2.15 -0.23" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: Man United; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: right">
+                </a-plane>
+                <a-plane id="goalscaption" 
+                         position="0.1 1.15 .01" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: Goals; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: center">
+                </a-plane>
+                <a-plane id="goals-team-a" 
+                         position="0.1 1.15 0.25" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: left">
+                </a-plane>
+                <a-plane id="goals-team-b" 
+                         position="0.1 1.15 -0.23" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: right">
+                </a-plane>
+                <a-plane id="posessioncaption" 
+                         position="0.1 0.15 .01" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: Possession; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: center">  
+                </a-plane>
+                <a-plane id="possession-team-a" 
+                         position="0.1 0.15 0.25" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: left">
+                </a-plane>
+                <a-plane id="possession-team-b" 
+                         position="0.1 0.15 -0.23" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: right">
+                </a-plane>
+                <a-plane id="yccaption" 
+                         position="0.1 -0.85 .01" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: Yellow Cards; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: center">
+                </a-plane>
+                <a-plane id="yellow-team-a" 
+                         position="0.1 -0.85 0.25" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: left">
+                </a-plane>
+                <a-plane id="yellow-team-b" 
+                         position="0.1 -0.85 -0.23" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: right">
+                </a-plane>
+                <a-plane id="rccaption" 
+                         position="0.1 -1.85 .01" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: Red Cards; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: center">
+                </a-plane>
+                <a-plane id="red-team-a" 
+                         position="0.1 -1.85 0.25" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: left">
+                </a-plane>
+                <a-plane id="red-team-b" 
+                         position="0.1 -1.85 -0.23" 
+                         rotation="0 90 0" 
+                         height=".6" 
+                         width="auto" 
+                         color="#191817"
+                         text="value: 0; 
+                               font: exo2bold; 
+                               width: 5; 
+                               align: right">
+                </a-plane>
+            </a-box>
+
+            <!--Create Board that allows user to view immersive team videos-->
+            <a-box
+                class="room"
+                width="0.1" depth="7.5" height="5"
+                position = "9.75 5 -3"
+                color = "#BBBBBB">
+                <a-plane src="#west-ham" 
+                         raycaster-target="canClick: true;"
+                         onClick="play360('west-ham-360-player');"
+                         width="3" 
+                         height="3"                               
+                         position="-0.06 0 -2" 
+                         rotation="0 -90 0">
+                </a-plane>
+                <a-plane src="#man-united" 
+                        raycaster-target="canClick: true;"
+                         onClick="play360('man-united-360-player');"
+                         width="3" 
+                         height="3"                               
+                         position="-0.06 0 2" 
+                         rotation="0 -90 0">
+                </a-plane>
+            </a-box>
+            
+        </a-scene>
+    </body>
+</html>
