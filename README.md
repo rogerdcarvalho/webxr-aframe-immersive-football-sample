@@ -244,7 +244,7 @@ To play the 360 videos though, we need some specific A-Frame components that can
         </a-videosphere>
     </a-entity>
 
-Now for the logic to handle the clicks. Very similar to the code snipped we used above to play the main video, but this time we also want to do some magic with making the 360 playing A-Frame components visible. We also want to prevent the user from playing both the main screen and the 360 videos at the same time, so we need to handle that as well:
+Now for the logic to handle the clicks. Very similar to the code snippet we used above to play the main video, but this time we also want to do some magic with making the 360 playing A-Frame components visible. We also want to prevent the user from playing both the main screen and the 360 videos at the same time, so we need to handle that as well:
 
     function play360(id){
     // Plays one of the immersive 360 videos
