@@ -11,7 +11,7 @@ Nowadays however, you can build immersive VR experiences for a fraction of the c
 
 You may wonder whether it makes any sense for your content to be presented in an immersive VR experience. When thinking about VR, a lot of people instantly think of games. But there are a lot more experiences that could benefit from full immersion. Think for instance about sports, movies and music. Sure, you can view a match, movie or concert on your TV or smartphone. But as an immersive VR experience, people could actually view this content on a screen the size of an IMAX cinema, and you'd still have additional screen real estate that could enrich the experience even further. 
 
-Let's take a sports match. Imagine not only viewing the match on a massive screen, but when looking to the left having a panel that shows live up-to-date and in-depth statistics and player information while you watch. When looking to the right you could have something like a live twitter feed that shows you what other fans are thinking of the game as it happens. Sure, you can do this on a traditional '2D' website, but this is not a great experience, as this would be at the expense of the size of the video, which people would love to see on a big screen. This repository is a sample project that shows the potential of WebXR for non-gaming experiences.
+Let's take a sports match. Imagine not only viewing the match on a massive screen, but when looking to the left having a panel that shows live up-to-date and in-depth statistics and player information while you watch. When looking to the right you could have something like a live twitter feed that shows you what other fans are saying about the game as it happens. Sure, you can do this on a traditional '2D' website, but this is not a great experience, as this would be at the expense of the size of the video, which people would love to see on a big screen. This repository is a sample project that shows the potential of WebXR for non-gaming experiences.
 
 ## What this repository does
 
@@ -19,7 +19,7 @@ This repository is basically just a website. It's a website that shows viewers t
 
 ## How it works
 
-It uses WebXR and the A-Frame library to create an immersive environment by writing very simple HTML and JavaScript snippets. I've used code written by [Lee Stemkoski](https://github.com/stemkoski), who in turn was inspired by the NVIDIA PhysX port Zach Capalbo made for the [VARTISTE](https://vartiste.xyz/) project. I also took some inspiration and borrowed assets created by [Frame Academy](https://learn.framevr.io). Lastly I 'borrowed' some sports videos by West Ham United FC, VReam Sports and Whitecoat Productions. Please do not use this footage for anything, as these videos are copyrighted by their respective owners and I've only used them to demonstrate how WebXR could work, there is no intention to have this site be used by actual viewers or sports fans.
+It uses WebXR and the A-Frame library to create an immersive environment using very simple HTML and JavaScript snippets. I've used code written by [Lee Stemkoski](https://github.com/stemkoski), who in turn was inspired by the NVIDIA PhysX port Zach Capalbo made for the [VARTISTE](https://vartiste.xyz/) project. I also took some inspiration and borrowed assets created by [Frame Academy](https://learn.framevr.io). Lastly I 'borrowed' some sports videos by West Ham United FC, VReam Sports and Whitecoat Productions. Please do not use this footage for anything, as these videos are copyrighted by their respective owners and I've only used them to demonstrate how WebXR could work, there is no intention to have this site be used by actual viewers or sports fans.
 
 As you will see, the project is a simple index.html that loads up the following libraries:
 
@@ -246,7 +246,7 @@ To play the 360 videos though, we need some specific A-Frame components that can
         </a-videosphere>
     </a-entity>
 
-Now for the logic to handle the clicks. Very similar to the code snippet we used above to play the main video, but this time we also want to do some magic with making the 360 playing A-Frame components visible. We also want to prevent the user from playing both the main screen and the 360 videos at the same time, so we need to handle that as well:
+Now for the logic to handle the clicks. Very similar to the code snippet we used above to play the main video, but this time we also want to do some magic to make the 360 player A-Frame component visible. We also want to prevent the user from playing both the main screen and the 360 videos at the same time, so we need to handle that as well:
 
     function play360(id){
     // Plays one of the immersive 360 videos
@@ -338,7 +338,7 @@ Another thing we have to cover is for the user to be able to 'exit' playing a 36
         
     });
 
-And there we have it. Our first immersive interactions are done, with very little code required! To spice up the environment even more, and give the viewer something to do while waiting for the match to start, let's throw in a couple of footballs they can play with. This requires very little code:
+And there we have it. Our first immersive interactions are done, with very little code required! To spice up the environment even more (and give the viewer something to do while waiting for the match to start), let's throw in a couple of footballs they can play with. This requires very little code:
 
     <!--Add some footballs to add to the ambiance-->
     <a-sphere physx-body="type: dynamic;" 
