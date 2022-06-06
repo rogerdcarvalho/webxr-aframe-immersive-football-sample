@@ -20,7 +20,7 @@
         <script src="js/controller-listener.js"></script>
         <!--Handle viewer movement Quest Controllers  (by stemkoski)-->
         <script src="js/player-move.js"></script>
-        <!--Handle grabbing and clicking on objects (by stemkoski)-->
+        <!--Handle grabbing and clicking on objects (by stemkoski, slightly amended so objects are clickable as well as draggable, and to make the 'glow' around a focused element work better)-->
         <script src="js/raycaster-extras.js"></script>
         <!--Handle physics (by stemkoski) -->
         <script src="js/physx.release.js"></script>
@@ -242,7 +242,6 @@
                     
                     // Hide all room elements
                     const roomElements = document.querySelectorAll(".room");
-                    console.log(roomElements);
                     roomElements.forEach((roomElement) => {
                         roomElement.setAttribute("visible", false)
                     });
@@ -252,7 +251,7 @@
                     video.play();
                     video.muted = false;
                     
-                    // Make player available globally so it can be stopped by controller
+                    // Make player available globally so it can be stopped by controllers
                     window.immersivePlayer = object;
                     
                     // Wait for the video to load and then inform the 'tick' function of the player to detect controller presses to stop the video
@@ -392,7 +391,7 @@
                       position="0 5 -9.9"
                       rotation="0 0 0"
                       video-screen
-                      raycaster-target="canClick: true; glowOnHover: true;"
+                      raycaster-target="canClick: true;"
                       onClick="playPauseVideo();"
                       clickable
                       visible="true">
@@ -468,7 +467,7 @@
       				  visible=false>
       	    </a-entity>
             
-            <!--Add 3 footballs to add to the ambiance-->
+            <!--Add some footballs to add to the ambiance-->
             <a-sphere physx-body="type: dynamic;" 
                       physx-material="restitution: 0.8;"
                       raycaster-target="canGrab: true;"
