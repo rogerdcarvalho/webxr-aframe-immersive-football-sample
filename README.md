@@ -1,5 +1,5 @@
 # webxr-aframe-immersive-football-sample
-A sample immersive football website for Oculus Quest. 
+A sample immersive football website for Oculus Quest. You can watch a match, view up-to-date stats as the match progresses, and jump into immersive fan experiences of the teams playing. You can also move around in the space and throw some balls around. Try the experience by visiting [https://dev.rdcmedia.net/webxr/football/](https://dev.rdcmedia.net/webxr/football/) with your Oculus Quest browser.
 
 ![screenshot 1](https://dev.rdcmedia.net/webxr/football/images/demo.jpg "Immersive Football Sample")&nbsp;&nbsp;&nbsp;&nbsp;
 
