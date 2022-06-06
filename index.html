@@ -39,16 +39,16 @@
               },
               tick: function()
               {
-                    //Stop playing if any button is pressed
-                    if (window.immersivePlaying && (this.controllerData.buttonY.pressing ||
-                      this.controllerData.buttonX.pressing ||
-                      this.controllerData.leftTrigger.pressing ||
-                      this.controllerData.leftGrip.pressing ||
-                      this.controllerData.buttonB.pressing ||
-                      this.controllerData.buttonA.pressing ||
-                      this.controllerData.rightTrigger.pressing ||
-                      this.controllerData.rightGrip.pressing)
-                  ) {
+                    if (window.immersivePlaying && (
+                        this.controllerData.buttonY.pressing ||
+                        this.controllerData.buttonX.pressing ||
+                        this.controllerData.leftTrigger.pressing ||
+                        this.controllerData.leftGrip.pressing ||
+                        this.controllerData.buttonB.pressing ||
+                        this.controllerData.buttonA.pressing ||
+                        this.controllerData.rightTrigger.pressing ||
+                        this.controllerData.rightGrip.pressing)
+                    ) {
                         // Make room elements visible again
                         const roomElements = document.querySelectorAll(".room");
                         roomElements.forEach((roomElement) => {
@@ -245,6 +245,9 @@
                     roomElements.forEach((roomElement) => {
                         roomElement.setAttribute("visible", false)
                     });
+                    
+                    // Move player back to default position in case they moved
+                    document.querySelector("#player").object3D.position.set(0, 2, -0.5);
                     
                     // Make 360 player visible and start playing video
                     object.setAttribute("visible", true)
